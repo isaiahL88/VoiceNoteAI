@@ -17,6 +17,7 @@ import android.speech.tts.Voice;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -67,6 +68,10 @@ public class RecordNotes extends AppCompatActivity {
     private double secondsRecorded;
     private AppDatabase db;
     private VoiceNoteDAO vnDao;
+    //VN data
+    String vnTitle = "";
+    float referenceVol = 0;
+    float enhancedVol = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -226,10 +231,12 @@ public class RecordNotes extends AppCompatActivity {
             dialog.show();
 
             //POPUP VIEWS
+            EditText titleInput = popup.findViewById(R.id.titleInput);
             Button playButton = popup.findViewById(R.id.playButton);
             Button cancelButton = popup.findViewById(R.id.cancelButton);
             Button saveButton = popup.findViewById(R.id.saveButton);
             SeekBar koalaSeek= popup.findViewById(R.id.koalaSlider);
+
 
             playButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -280,10 +287,36 @@ public class RecordNotes extends AppCompatActivity {
             saveButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    uploadVoiceNote();
-                    displayError("Saved Voice Note!");
-                    finish();
+                    vnTitle = titleInput.getText().toString();
+                    if(vnTitle.equals("")){
+                        displayError("Please enter a valid title!");
+                    }else{
+                        uploadVoiceNote();
+                        displayError("Saved Voice Note!");
+                        finish();
+                    }
                 }
+            });
+
+            //Add seek bar on change for adjusting koala usage
+            koalaSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+                    if (seekBar.getId() == R.id.koalaSlider) {
+                        float progressFloat = (float) progress;
+                        referenceVol = (100f - progressFloat) / 100f;
+                        enhancedVol = progressFloat / 100f;
+
+                        referenceMediaPlayer.setVolume(referenceVol, referenceVol);
+                        enhancedMediaPlayer.setVolume(enhancedVol, enhancedVol);
+                    }
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {}
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {}
             });
 
         }else{
@@ -318,7 +351,7 @@ public class RecordNotes extends AppCompatActivity {
             @Override
             public void run(){
                 Log.i("DEBUG", "run thread");
-                vnDao.insertVoiceNote(new VoiceNote("test", referenceFilepath, secondsRecorded));
+                vnDao.insertVoiceNote(new VoiceNote(vnTitle, referenceFilepath, secondsRecorded));
 
                 ArrayList<VoiceNote> voiceNotes = (ArrayList<VoiceNote>) vnDao.getAllVoiceNotes();
                 for(VoiceNote voiceNote: voiceNotes){
