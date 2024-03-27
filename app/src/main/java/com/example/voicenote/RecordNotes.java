@@ -5,12 +5,16 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.room.Room;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.speech.tts.Voice;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -26,6 +30,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import ai.picovoice.android.voiceprocessor.VoiceProcessor;
 import ai.picovoice.koala.Koala;
@@ -50,11 +55,16 @@ public class RecordNotes extends AppCompatActivity {
     private Boolean isRecording, isPlaying;
     private MediaPlayer referenceMediaPlayer;
     private MediaPlayer enhancedMediaPlayer;
+    private double secondsRecorded;
+    private AppDatabase db;
+    private VoiceNoteDAO vnDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_record_notes);
+        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "voiceNoteDB").build();
+        vnDao = db.voiceNoteDAO();
 
         recordButton = findViewById(R.id.recordButton);
         noteDuration = findViewById(R.id.noteDuration);
@@ -209,12 +219,17 @@ public class RecordNotes extends AppCompatActivity {
                 public void onClick(View view) {
                     if(isPlaying){
                         //CURRENTLY PLAYING -> STOP
+                        referenceMediaPlayer.pause();
+                        enhancedMediaPlayer.pause();
+                        isPlaying = false;
+                        playButton.setText("Play");
 
                     }else{
                         //NOT PLAYING -> START PLAYING
                         referenceMediaPlayer.start();
                         enhancedMediaPlayer.start();
-
+                        isPlaying = true;
+                        playButton.setText("Pause");
                         //todo: fix
                         referenceMediaPlayer.setVolume(0, 0);
                         enhancedMediaPlayer.setVolume(1, 1);
@@ -222,6 +237,35 @@ public class RecordNotes extends AppCompatActivity {
                 }
             });
 
+            cancelButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    //stop media players in case they are still playing
+                    if (referenceMediaPlayer.isPlaying()) {
+                        referenceMediaPlayer.stop();
+                    }
+                    if (enhancedMediaPlayer.isPlaying()) {
+                        enhancedMediaPlayer.stop();
+                    }
+
+                    //reset state
+                    isRecording = false;
+                    isPlaying = false;
+
+                    playButton.setText("Play");
+                    recordButton.setImageResource(R.drawable.record);
+
+                    dialog.dismiss();
+
+                }
+            });
+
+            saveButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    uploadVoiceNote();
+                }
+            });
 
         }else{
             //START RECORDING
@@ -243,6 +287,27 @@ public class RecordNotes extends AppCompatActivity {
 
         }
 
+    }
+
+    /*
+        Uploads voice note to room database
+
+        note: must not be performed on main UI thread
+     */
+    public void uploadVoiceNote(){
+        Thread tr = new Thread(new Runnable(){
+            @Override
+            public void run(){
+                Log.i("DEBUG", "run thread");
+                vnDao.insertVoiceNote(new VoiceNote("test", referenceFilepath, secondsRecorded));
+
+                ArrayList<VoiceNote> voiceNotes = (ArrayList<VoiceNote>) vnDao.getAllVoiceNotes();
+                for(VoiceNote voiceNote: voiceNotes){
+                    Log.i("DEBUG", voiceNote.toString());
+                }
+            }
+        });
+        tr.start();
     }
 
     /*
@@ -274,7 +339,7 @@ public class RecordNotes extends AppCompatActivity {
         try{
             voiceProcessor.stop();
 
-            double secondsRecorded = ((double) (referenceData.size()) / (double) (koala.getSampleRate()));
+            secondsRecorded = ((double) (referenceData.size()) / (double) (koala.getSampleRate()));
             noteDuration.setText(String.format("Recorded: %.1fs", secondsRecorded));
 
             synchronized (voiceProcessor) {
