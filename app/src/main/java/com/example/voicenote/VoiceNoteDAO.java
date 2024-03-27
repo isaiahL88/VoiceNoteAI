@@ -13,4 +13,5 @@ public interface VoiceNoteDAO {
 
     @Insert
     void insertVoiceNote(VoiceNote voiceNote);
+
 }

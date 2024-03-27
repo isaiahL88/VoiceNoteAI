@@ -23,10 +23,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,7 +72,7 @@ public class RecordNotes extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_record_notes);
-        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "voiceNoteDB").build();
+        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "voiceNoteDB").fallbackToDestructiveMigration().build();
         vnDao = db.voiceNoteDAO();
 
         recordButton = findViewById(R.id.recordButton);
@@ -75,10 +84,18 @@ public class RecordNotes extends AppCompatActivity {
         isRecording = false;
         isPlaying = false;
 
-        //Setup original and enhanced file paths;
-        //TODO: Unique filepaths for each new voice note
-        referenceFilepath = getApplicationContext().getFileStreamPath("reference.wav").getAbsolutePath();
-        enhancedFilepath = getApplicationContext().getFileStreamPath("enhanced.wav").getAbsolutePath();
+        //Setup original and enhanced file paths on seperate thread
+        Thread tr = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int count = vnDao.getAllVoiceNotes().size();
+
+                referenceFilepath = getApplicationContext().getFileStreamPath(count + ".wav").getAbsolutePath();
+                enhancedFilepath = getApplicationContext().getFileStreamPath(count + "E.wav").getAbsolutePath();
+            }
+        });
+        tr.start();
+
         //init media players
         referenceMediaPlayer = new MediaPlayer();
         enhancedMediaPlayer = new MediaPlayer();
@@ -86,9 +103,9 @@ public class RecordNotes extends AppCompatActivity {
         enhancedMediaPlayer.setVolume(1, 1);
 
         //setup koala
-
         try {
             koala = new Koala.Builder().setAccessKey(ACCESS_KEY).build(getApplicationContext());
+
         } catch (KoalaInvalidArgumentException e) {
             onKoalaInitError(e.getMessage());
         } catch (KoalaActivationException e) {
@@ -264,6 +281,8 @@ public class RecordNotes extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     uploadVoiceNote();
+                    displayError("Saved Voice Note!");
+                    finish();
                 }
             });
 

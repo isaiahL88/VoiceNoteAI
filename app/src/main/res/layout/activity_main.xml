@@ -26,10 +26,10 @@
             style="@style/Widget.Material3.Button.ElevatedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="30dp"
+            android:layout_marginBottom="45dp"
             android:fontFamily="@font/nunito_sans_semibold"
             android:text="My Notes"
-            android:textSize="32sp" />
+            android:textSize="23sp" />
 
         <Button
             android:id="@+id/recordButton"
@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/nunito_sans_semibold"
             android:text="Record Voice Note"
-            android:textSize="32sp" />
+            android:textSize="23sp" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

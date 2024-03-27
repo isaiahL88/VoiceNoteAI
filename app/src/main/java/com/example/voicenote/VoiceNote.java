@@ -7,9 +7,10 @@ import androidx.room.PrimaryKey;
 
 @Entity
 public class VoiceNote {
+    @ColumnInfo(name= "title")
+    String title;
     @NonNull
     @PrimaryKey
-    String title;
     @ColumnInfo(name = "ref")
     String ref;
     @ColumnInfo(name = "secondsRecorded")
