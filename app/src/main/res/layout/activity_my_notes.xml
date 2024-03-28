@@ -38,9 +38,12 @@
 
     <ListView
         android:id="@+id/list_view"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="550dp"
         android:background="@null"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:foregroundGravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/searchView" />
