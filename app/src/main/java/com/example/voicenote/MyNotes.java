@@ -155,7 +155,9 @@ public class MyNotes extends AppCompatActivity {
                 }
                 if (octopusMatches.length > 0) {
                     //MATCHES OCTOPUS INDEXING
-                    displayedVNs.add(voiceNote);
+                    if(!displayedVNs.contains(voiceNote)){                    displayedVNs.add(voiceNote);
+                        displayedVNs.add(voiceNote);
+                    }
                 }
 
                 index++;
