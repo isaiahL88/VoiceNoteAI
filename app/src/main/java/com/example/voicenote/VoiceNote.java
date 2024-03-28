@@ -5,6 +5,8 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.ArrayList;
+
 @Entity
 public class VoiceNote {
     @ColumnInfo(name= "title")
@@ -20,6 +22,13 @@ public class VoiceNote {
 
     @ColumnInfo(name = "referenceVol")
     float referenceVol;
+
+    @ColumnInfo(name = "referenceData");
+    ArrayList<Short> referenceData;
+
+    @ColumnInfo(name = "enhancedData");
+    ArrayList<Short> enhancedData;
+
     public VoiceNote(){
 
     }

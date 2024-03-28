@@ -77,6 +77,8 @@ public class RecordNotes extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_record_notes);
+
+        //ROOM DB and DAO INIT
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "voiceNoteDB").fallbackToDestructiveMigration().build();
         vnDao = db.voiceNoteDAO();
 
@@ -351,7 +353,7 @@ public class RecordNotes extends AppCompatActivity {
             @Override
             public void run(){
                 Log.i("DEBUG", "run thread");
-                vnDao.insertVoiceNote(new VoiceNote(vnTitle, referenceFilepath, secondsRecorded, referenceVol, enhancedVol));
+                vnDao.insertVoiceNote(new VoiceNote(vnTitle, referenceFilepath, secondsRecorded, referenceVol, enhancedVol, referenceData, enhancedData));
 
                 ArrayList<VoiceNote> voiceNotes = (ArrayList<VoiceNote>) vnDao.getAllVoiceNotes();
                 for(VoiceNote voiceNote: voiceNotes){
