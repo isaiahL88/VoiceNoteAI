@@ -23,22 +23,21 @@ public class VoiceNote {
     @ColumnInfo(name = "referenceVol")
     float referenceVol;
 
-    @ColumnInfo(name = "referenceData");
     ArrayList<Short> referenceData;
-
-    @ColumnInfo(name = "enhancedData");
     ArrayList<Short> enhancedData;
 
     public VoiceNote(){
 
     }
 
-    public VoiceNote(String title, String ref, double secondsRecorded, float referenceVol, float enhancedVol){
+    public VoiceNote(String title, String ref, double secondsRecorded, float referenceVol, float enhancedVol, ArrayList<Short> referenceData, ArrayList<Short> enhancedData){
         this.title = title;
         this.ref = ref;
         this.secondsRecorded = secondsRecorded;
         this.referenceVol = referenceVol;
         this.enhanchedVol = enhancedVol;
+        this.referenceData = referenceData;
+        this.enhancedData = enhancedData;
     }
 
     public String toString(){

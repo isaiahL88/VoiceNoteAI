@@ -125,7 +125,7 @@ public class MyNotes extends AppCompatActivity {
 
         //Octopus indexxing
         for(VoiceNote voiceNote: voiceNotes){
-            HashMap<String, OctopusMatch[]> matches = octopus.search(metadata, text);
+//            HashMap<String, OctopusMatch[]> matches = octopus.search(metadata, text);
         }
 
         voiceNoteAdapter.notifyDataSetChanged();
