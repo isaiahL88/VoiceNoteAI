@@ -17,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,6 +42,7 @@ public class MyNotes extends AppCompatActivity {
     private VoiceNoteDAO vnDao;
     SearchView searchView;
     ListView listView;
+    private ProgressBar progressBar;
     private MediaPlayer referenceMediaPlayer;
     private MediaPlayer enhancedMediaPlayer;
     private int recentNote = -1;
@@ -48,8 +50,10 @@ public class MyNotes extends AppCompatActivity {
     private ArrayList<VoiceNote> displayedVNs;
     private ArrayList<VoiceNote> voiceNotes;
     private Octopus octopus;
-    private OctopusMetadata metadata = null;
+    private ArrayList<OctopusMetadata> refMetadata;
+    private ArrayList<OctopusMetadata> enhancedMetadata;
     VoiceProcessor vp;
+    private boolean mdGenerated; //set true when meta data has finished being generated;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,10 +66,15 @@ public class MyNotes extends AppCompatActivity {
         //init views
         searchView = findViewById(R.id.searchView);
         listView = findViewById(R.id.list_view);
+        progressBar = findViewById(R.id.loadingBar);
 
-        //init media players
+        //init state
         referenceMediaPlayer = new MediaPlayer();
         enhancedMediaPlayer = new MediaPlayer();
+        refMetadata = new ArrayList<OctopusMetadata>();
+        enhancedMetadata = new ArrayList<OctopusMetadata>();
+        mdGenerated = false;
+        listView.setVisibility(View.GONE); //keep list view gone until meta data is generated
 
         voiceNotes = new ArrayList<>();
         displayedVNs = new ArrayList<VoiceNote>();
@@ -73,7 +82,6 @@ public class MyNotes extends AppCompatActivity {
         listView.setAdapter(voiceNoteAdapter);
 
         loadVoiceNotes(); //Load all voice notes
-
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -138,17 +146,51 @@ public class MyNotes extends AppCompatActivity {
         Thread tr = new Thread(new Runnable() {
             @Override
             public void run() {
-
                 voiceNotes = (ArrayList<VoiceNote>) vnDao.getAllVoiceNotes();
                 displayedVNs.addAll(voiceNotes);
-                updateUI();
+                generateMetaData();
             }
         });
         tr.start();
     }
 
+    /*
+        Generates Metadata for each voice note
+     */
+    public void generateMetaData(){
+        for(VoiceNote voiceNote: voiceNotes){
+            // Convert ArrayList<Short> to short[]
+            int size = voiceNote.referenceData.size();
+            short[] refData = new short[size];
+            short[] enhcData = new short[size];
+            for (int i = 0; i < size; i++) {
+                refData[i] = voiceNote.referenceData.get(i);
+                enhcData[i] = voiceNote.enhancedData.get(i);
+            }
+            try{
+                refMetadata.add(octopus.indexAudioData(refData));
+                enhancedMetadata.add(octopus.indexAudioData(enhcData));
+            }catch(Exception e){
+                Log.i("DEBUG", e.getMessage());
+            }
+        }
+
+        mdGenerated = true;
+        updateUI();
+
+    }
+
     public void updateUI(){
-        voiceNoteAdapter.notifyDataSetChanged();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                voiceNoteAdapter.notifyDataSetChanged();
+                if(mdGenerated){
+                    listView.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.GONE);
+                }
+            }
+        });
     }
 
     /*
