@@ -23,6 +23,7 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import ai.picovoice.android.voiceprocessor.VoiceProcessor;
@@ -63,6 +64,23 @@ public class MyNotes extends AppCompatActivity {
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "voiceNoteDB").fallbackToDestructiveMigration().build();
         vnDao = db.voiceNoteDAO();
 
+        //octopus init
+        try {
+            octopus = new Octopus.Builder().setAccessKey(ACCESS_KEY).build(getApplicationContext());
+        } catch (OctopusInvalidArgumentException e) {
+            displayError(e.getMessage());
+        } catch (OctopusActivationException e) {
+            displayError("AccessKey activation error");
+        } catch (OctopusActivationLimitException e) {
+            displayError("AccessKey reached its device limit");
+        } catch (OctopusActivationRefusedException e) {
+            displayError("AccessKey refused");
+        } catch (OctopusActivationThrottledException e) {
+            displayError("AccessKey has been throttled");
+        } catch (OctopusException e) {
+            displayError("Failed to initialize Octopus " + e.getMessage());
+        }
+
         //init views
         searchView = findViewById(R.id.searchView);
         listView = findViewById(R.id.list_view);
@@ -96,21 +114,6 @@ public class MyNotes extends AppCompatActivity {
             }
         });
 
-        try {
-            octopus = new Octopus.Builder().setAccessKey(ACCESS_KEY).build(getApplicationContext());
-        } catch (OctopusInvalidArgumentException e) {
-            displayError(e.getMessage());
-        } catch (OctopusActivationException e) {
-            displayError("AccessKey activation error");
-        } catch (OctopusActivationLimitException e) {
-            displayError("AccessKey reached its device limit");
-        } catch (OctopusActivationRefusedException e) {
-            displayError("AccessKey refused");
-        } catch (OctopusActivationThrottledException e) {
-            displayError("AccessKey has been throttled");
-        } catch (OctopusException e) {
-            displayError("Failed to initialize Octopus " + e.getMessage());
-        }
 
     }
 
@@ -131,11 +134,35 @@ public class MyNotes extends AppCompatActivity {
             }
         }
 
-        //Octopus indexxing
-        for(VoiceNote voiceNote: voiceNotes){
-//            HashMap<String, OctopusMatch[]> matches = octopus.search(metadata, text);
-        }
+        try {
 
+
+            HashSet<String> searchSet = new HashSet<>();
+            searchSet.add(text);
+            //Octopus indexxing
+            int index = 0;
+            for (VoiceNote voiceNote : voiceNotes) {
+                HashMap<String, OctopusMatch[]> matches = octopus.search(refMetadata.get(index), searchSet);
+                OctopusMatch [] octopusMatches = matches.get(text);
+                for (OctopusMatch match : octopusMatches) {
+                    Log.i(
+                            "OctopusDemo",
+                            String.format(
+                                    "%f -> %f (%f)%n",
+                                    match.getStartSec(),
+                                    match.getEndSec(),
+                                    match.getProbability()));
+                }
+                if (octopusMatches.length > 0) {
+                    //MATCHES OCTOPUS INDEXING
+                    displayedVNs.add(voiceNote);
+                }
+
+                index++;
+            }
+        }catch(Exception e){
+            Log.i("DEBUG", e.getMessage());
+        }
         voiceNoteAdapter.notifyDataSetChanged();
     }
 
@@ -161,10 +188,14 @@ public class MyNotes extends AppCompatActivity {
         for(VoiceNote voiceNote: voiceNotes){
             // Convert ArrayList<Short> to short[]
             int size = voiceNote.referenceData.size();
+            int sizeE = voiceNote.enhancedData.size();
+
             short[] refData = new short[size];
-            short[] enhcData = new short[size];
+            short[] enhcData = new short[sizeE];
             for (int i = 0; i < size; i++) {
                 refData[i] = voiceNote.referenceData.get(i);
+            }
+            for (int i = 0; i < sizeE; i++) {
                 enhcData[i] = voiceNote.enhancedData.get(i);
             }
             try{
