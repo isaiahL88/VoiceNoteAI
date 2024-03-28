@@ -15,14 +15,24 @@ public class VoiceNote {
     String ref;
     @ColumnInfo(name = "secondsRecorded")
     double secondsRecorded;
+    @ColumnInfo(name = "enhancedVol")
+    float enhanchedVol;
 
-    VoiceNote(String title, String ref, double secondsRecorded){
+    @ColumnInfo(name = "referenceVol")
+    float referenceVol;
+    public VoiceNote(){
+
+    }
+
+    public VoiceNote(String title, String ref, double secondsRecorded, float referenceVol, float enhancedVol){
         this.title = title;
         this.ref = ref;
         this.secondsRecorded = secondsRecorded;
+        this.referenceVol = referenceVol;
+        this.enhanchedVol = enhancedVol;
     }
 
     public String toString(){
-        return "Title: " + title + "\nRef: " + ref + "\nsecondsRecorded: " +secondsRecorded;
+        return "Title: " + title + "\nRef: " + ref + "\nsecondsRecorded: " +secondsRecorded + "\nreferenceVol: " + referenceVol + "\nenhancedVol: " + enhanchedVol;
     }
 }

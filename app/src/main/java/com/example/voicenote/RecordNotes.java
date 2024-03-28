@@ -351,7 +351,7 @@ public class RecordNotes extends AppCompatActivity {
             @Override
             public void run(){
                 Log.i("DEBUG", "run thread");
-                vnDao.insertVoiceNote(new VoiceNote(vnTitle, referenceFilepath, secondsRecorded));
+                vnDao.insertVoiceNote(new VoiceNote(vnTitle, referenceFilepath, secondsRecorded, referenceVol, enhancedVol));
 
                 ArrayList<VoiceNote> voiceNotes = (ArrayList<VoiceNote>) vnDao.getAllVoiceNotes();
                 for(VoiceNote voiceNote: voiceNotes){
