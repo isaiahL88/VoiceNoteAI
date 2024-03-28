@@ -111,6 +111,7 @@ public class RecordNotes extends AppCompatActivity {
 
         //setup koala
         try {
+            koala = null;
             koala = new Koala.Builder().setAccessKey(ACCESS_KEY).build(getApplicationContext());
 
         } catch (KoalaInvalidArgumentException e) {
@@ -175,7 +176,6 @@ public class RecordNotes extends AppCompatActivity {
         if (enhancedMediaPlayer != null) {
             enhancedMediaPlayer.release();
         }
-        koala.delete();
     }
 
     private void onKoalaInitError(String error) {
